@@ -55,7 +55,10 @@ Plug the microSD card into your computer and choose to install the **Raspberry P
 Assemble the scanner according to the 3D files.
 
 ![Mainboard](Sample_Images/mainboardcabeling.png)
+*Makerbase MKS 3D Printer Control Board*
+
 ![Creality Ender 3 Silent Motherboard](Sample_Images/mainboardcabeling_creality.jpg)
+*Creality Ender 3 Silent Motherboard*
 
 1.  Plug the stepper drivers into the mainboard's Y and Z axis (if not integrated), then plug in the stepper motors. 
 2.  Consider adding a heatsink to the Y-axis stepper driver, as it is used the most. 
