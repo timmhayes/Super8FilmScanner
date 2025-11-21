@@ -1,8 +1,6 @@
 *.FCStd1
-*.stl
 *.mp4
 *.cmd
 *.png
-*.jpg
 
 .DS_Store
