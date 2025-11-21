@@ -1,29 +1,39 @@
-# 3D printed Super 8 Film Scanner
+# 3D printed Super 8 Film Scanner (Pi 5 / Ender 3 Fork)
 
-Using OpenCV and Open Source software to scan and create videos from Super 8 film reel, along with a 3D printed frame.
+> **NOTE:** This is a forked version of the excellent repo provided by Stuart Pittaway at [stuartpittaway/Super8FilmScanner](https://github.com/stuartpittaway/Super8FilmScanner). 
+>
+> I initially planned to make a few minor changes and update his repo via a pull request, but I've completely rewritten much of the code and I'm not sure that is possible now. In addition, many of the changes were made quickly with LLM coding tools and the code needs additional testing. 
 
-The code and scanner were created quickly to achieve the job of scanning a handful of Super 8 reels at an acceptable quality.
+**Substantial changes in this fork:**
+1.  **Raspberry Pi 5 Support:** Updated to run on [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/) using the latest Pi OS (Bookworm/Trixie). The code now supports `picamera2` rather than relying on the deprecated `picamera`.
+2.  **Machine Learning Alignment:** Improved sprocket alignment using a custom-trained [YOLO](https://docs.ultralytics.com/) machine learning model for object detection. (Moved to a separate repo).
+3.  **Ender 3 Hardware:** Documented how an old [Ender 3](https://www.creality.com/products/ender-3-3d-printer) can be used to provide most of the moving parts. My build was created using an Ender 3 Pro with an updated [Silent Board](https://www.creality3dofficial.com/products/creality-silent-mainboard-v4-2-7). If you don't have one handy, a cheap secondhand model provides the motherboard, stepper motors, a control panel (not needed, but useable here), and some T-slotted rail to use on other projects.
 
-The code is not optimised or user friendly, but pull requests are very welcome!
+---
 
-The code is unlikely to run straight out of the box on your computer/system, it will need minor amendments to folder names/paths etc.
+# Project Overview
 
+The code and scanner were created quickly to achieve the job of scanning a handful of Super 8 reels at an acceptable quality. The code is unlikely to run straight out of the box on your computer/system; it will need minor amendments to folder names/paths etc.
 
-Items needed for this project:
-* [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
+## Items needed for this project
+* [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) or [Raspberry Pi 5](https://www.raspberrypi.com/products/raspberry-pi-5/)
 * [Pi Advanced 12megapixel Camera](https://www.raspberrypi.com/products/raspberry-pi-high-quality-camera/)
 * [Microscope lens for the Raspberry Pi High Quality Camera - 0.12-1.8x](https://shop.pimoroni.com/products/microscope-lens-0-12-1-8x)
-* 3D printed frame (files in this repository)
-* Two small depth stepper motors (NEMA 17 style)
-* RAMPS style motherboard for controlling the stepper motors and running [MARLIN](https://github.com/MarlinFirmware/Marlin)
-* Two stepper drivers (for example A4988)
-* ~5000K "cool white" MR16 style LED light bulb (5 Watt)
-* 240V Power supply (an old Ender3 PSU will do)
+* 3D printed frame (files in this repository). The FreeCAD files are from the original project. STL files have neem added for convenience. A simple manual film rewinder is also included, but to complete the build you'll need to mount it on some T-slot rail and add some V-slot roller wheels for bearings. Both of these can can be pulled from an Ender 3.
+* Two small depth stepper motors (NEMA 17 style - can be pulled from an old Ender 3)
+* RAMPS style motherboard for controlling the stepper motors and running [MARLIN](https://github.com/MarlinFirmware/Marlin) (can be pulled from an old Ender 3)
+* Two stepper drivers (e.g., A4988) - **Not required** if using an Ender 3 motherboard, as the drivers are soldered onto the board.
+* ~5000K "cool white" MR16 style LED light bulb (5 Watt). A [base socket](https://www.amazon.com/dp/B073FFBSJM) is also helpful. I used a 12V version and needed a [buck converter](https://www.amazon.com/dp/B076H3XHXP) to step the voltage down from the 24V Ender 3 power supply.
+* A small spring. One from [this assortment](https://www.amazon.com/dp/B0F9PZ5QHL) will work.
+* A rubber gasket to fit over the stepper motor gear to make contact with the film. One of these [rubber grommets](https://www.amazon.com/dp/B07YXXYY7R) worked, but wasn't perfect and needed modification.
+* 24V Power supply (an old Ender 3 PSU will do)
 * MicroSD card
+* Various M3 screws (like [these](https://www.amazon.com/dp/B07VRC5RJ8)).
 
-# YouTube video
+# YouTube Video (Original Project)
 
-See the video on how to use and build this device.
+See Stuart Pittaway's video on how to use and build the *original* device. 
+**Note:** The physical build in this fork differs (using Ender 3 parts), but the general concept remains the same.
 
 https://youtu.be/rd1Xu6e6nrw
 
@@ -32,119 +42,122 @@ https://youtu.be/rd1Xu6e6nrw
 This is a rough setup description and some steps might be missing, but here is what's necessary:
 
 ## Step 1 - Flash Marlin to the mainboard
-Flash your mainboard with the Marlin Firmware. You can find the latest release [here](https://marlinfw.org/meta/download/).
+If needed, flash your mainboard with the Marlin Firmware. You can find the latest release [here](https://marlinfw.org/meta/download/). Open Arduino IDE, make the required changes (for your mainboard), connect the Mainboard via USB and upload the firmware.
 
-Open Arduino IDE, make the required changes (for your mainboard), connect the Mainboard via USB and upload the firmware to the Mainboard.
+**Note:** If your motherboard was pulled from an Ender 3, this step is likely unnecessary as it should already be running Marlin.
 
-## Step 2 - Install RaspOS on the Raspberry Pi
+## Step 2 - Install the Raspberry Pi OS on the Raspberry Pi
 Install the Raspberry Pi Imager, which you can find [here](https://www.raspberrypi.com/software/).
 
-Plug in the microSD card into your computer and choose to install the **Legacy 32-bit OS** in the imager software. Use CTRL+SHIFT+X to open the advanced settings.  Choose a hostname, for example "scanner". Then add a username and password. Activate SSH under "services" and add your Wifi settings.
+Plug the microSD card into your computer and choose to install the **Raspberry Pi OS (64-bit)** (Bookworm or later) in the imager software. Click the gear icon to open the advanced settings. Choose a hostname (e.g., "scanner"), add a username/password, activate SSH under "services", and add your Wifi settings.
 
 ## Step 3 - Wiring
 Assemble the scanner according to the 3D files.
 
 ![Mainboard](Sample_Images/mainboardcabeling.png)
+![Creality Ender 3 Silent Motherboard](Sample_Images/mainboardcabeling_creality.jpg)
 
-Plug in the stepper drivers into the mainboards Y and Z axis, then plug in the stepper motors in these axis. You should add the heatsink to the Y axis stepper driver, as it's the one used the most.
-
-Slot the Raspberry Pi HQ cameras ribbon cable into the Raspberry Pi and lock it in place. 
-
-Plug the LED wires into the fan header. 
-
-Connect the power supply to the mainboard via the two cables. Make sure the power supply is disconnected.
-
-Connect the mainboard to the Raspberry Pi.
+1.  Plug the stepper drivers into the mainboard's Y and Z axis (if not integrated), then plug in the stepper motors. 
+2.  Consider adding a heatsink to the Y-axis stepper driver, as it is used the most. 
+    *   *Tip:* If the Y-Axis stepper from the Ender 3 runs in the wrong direction, you may need to reverse the plug orientation or configure this in Marlin.
+3.  Slot the Raspberry Pi HQ camera ribbon cable into the Raspberry Pi and lock it in place.
+4.  Plug the LED wires into the fan header.
+5.  Connect the power supply to the mainboard via the two cables. **Ensure the power supply is disconnected from the wall while wiring.**
+6.  *(Optional)* Connect the Ender 3 control panel. This is not needed but may help with troubleshooting.(See the rainbow colored cable to the right above.)
+7.  Connect the mainboard to the Raspberry Pi via USB.
 
 ## Step 4 - Connecting to the Raspberry Pi
-If you don't plan to use the scanner with dedicated monitor, keyboard and mouse, you have to connect to it via Terminal and VNC. 
+If you don't plan to use the scanner with a dedicated monitor, keyboard, and mouse, you must connect via Terminal and VNC.
 
-Turn on the Raspberry Pi and the PSU. 
-
-Use SSH to connect to <username>@scanner.local, then install VNC server to control your scanner in the future. If your screen stays black after connecting, run "vncserver-virtual" to add a virtual display. 
+1.  Turn on the Raspberry Pi and the PSU.
+2.  Use SSH to connect to `<username>@scanner.local`.
+3.  Enable VNC on the Pi:
+    1. Run the command: `sudo raspi-config`
+    2. Navigate to `Interface Options` (option 5).
+    3. Select `VNC` (option P3).
+    4. Choose `Yes` to enable VNC.
+    5. Exit raspi-config. RealVNC Server will start automatically on boot.
+4. Download and install a VNC client on the computer you will connect to your Raspberry Pi. (e.g. [RealVNC Viewer](https://www.realvnc.com/en/connect/download/viewer/))
 
 ## Step 5 - Install dependencies
-To install OpenCV, run `sudo apt-get update` , then `sudo apt-get install build-essential cmake pkg-config libjpeg-dev libtiff5-dev libjasper-dev libpng-dev libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libxvidcore-dev libx264-dev libfontconfig1-dev libcairo2-dev libgdk-pixbuf2.0-dev libpango1.0-dev libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran libhdf5-dev libhdf5-serial-dev libhdf5-103 python3-pyqt5 python3-dev -y`
+The software relies on `picamera2`, `pyserial`, and `opencv`. The first two should be available in the default system build, so start by installing OpenCV:
 
-you might also need to run `pip install opencv-python==4.5.3.56` .
+```bash
+sudo apt update
+sudo apt upgrade
+sudo apt install python3-opencv
+```
+
+If you are running an older version of the Raspberry Pi OS and need the additional libraries, install them:
+```bash
+sudo apt install python3-picamera2 python3-serial
+```
+
+The following is not required, but you might find the [Visual Studio Code](https://code.visualstudio.com/) IDE helpful:
+```bash
+sudo apt install code
+```
 
 # Scanning Process
 
 ## Step 1 - Capture full frame masters
 
-On a Raspberry Pi (4 is possible), use the python code in `RasPi_Camera_Super8Scanner.py` to capture all the individual frames to individual PNG files.
+On the Raspberry Pi, use the python code in `RasPi_Camera_Super8Scanner.py` to capture individual frames to PNG files.
+
+**Configuration:**
+The scanner settings (frame dimensions, feed rates, exposure defaults) are located in the `ScannerConfig` class at the top of `RasPi_Camera_Super8Scanner.py`. Edit these values to match your specific hardware setup.
+
+**Running the Scanner:**
+```bash
+python3 RasPi_Camera_Super8Scanner.py
+```
+
+**Controls:**
+- **Startup Alignment:** Use the arrow keys to align the film. Press `SPACE` to start scanning.
+- **Scanning:** The scanner will automatically advance frames.
+- **Manual Mode:** Press `m` to enter manual mode if things go wrong.
+    - `f`/`b`: Forward/Backward nudge
+    - `[`/`]`: Adjust threshold. Hold Shift to advance 10 steps at a time.
+    - `SPACE`: Resume auto-scanning
 
 This will generate a large number of files (3000+) of significant file size 2+MByte each.  Camera captures approximately 3megapixel images.
 
-Scanning is slow, running around 1.25 frames per second, so a 3 minute reel takes 1 hour.  
-
-Speed was not a critical issue when designing this solution, however the longest delay is capturing the image from the Raspberry Pi camera.
-
-The images captured would look like this (only higher resolution).  Notice you can see the sproket hole and the black border on the right of the image.
+The images captured will look like this (only higher resolution). Notice you can see the sprocket hole and the black border on the right of the image.
 ![Full frame sample image](Sample_Images/Full_Frame_Sample.png)
 
 ## Step 2 - Alignment
+The alignment process is computationally intensive and runs much faster on a dedicated machine, particularly one with a dedicated GPU and NVMe drive. The code for doing this, which was once part of this repo, has been completely refactored and split off into a separate repo. 
 
-Step one captured the full frame of the film, this process takes those master images and accurately crops them to vertically and horizontally align them based on the sproket hole.
+**[Link TBD]**
 
-OpenCV is used to detect the hole and align/crop the image.
+## Configuration
+Advanced settings can be found in the `ScannerConfig` class within `RasPi_Camera_Super8Scanner.py`. Key settings include:
 
-The code is in `ImageRegistrationCropping.py` its likely you will need to tweak the code to cater for the particular file size/resolution you are using and the camera configuration.
+| Setting | Description | Default |
+| :--- | :--- | :--- |
+| `CAMERA_EXPOSURE` | List of EV values. Add multiple (e.g., `[-2.0, 0.0, 2.0]`) for HDR bracketing. | `[-8.0]` |
+| `FRAME_SPACING` | Millimeters of film to advance per frame. Tweak this if you find your scanning process moving back and forth frequently to correct frame drift. This can slow down the scan significantly. | `16.0` |
+| `NUDGE_FEED_RATE` | Speed of the motor during manual adjustments. | `1000` |
 
-Look for the variable `frame_dims` to control the output image dimensions.  Its likely you will also need to change the folder names.
+## Output Directory Structure
+Images are saved to the `Capture` folder in the current directory.
+*   `./Capture/Capture-8.0/`: Contains the raw PNG images for the -8.0 EV exposure.
+*   If you configure multiple exposures, additional folders (e.g., `Capture-2.0`) will be created.
 
-The files are put into a folder named "Aligned".  Example image.
-![Aligned frame sample image](Sample_Images/Aligned_Sample.png)
+## Code Overview
+*   `RasPi_Camera_Super8Scanner.py`: Main application loop, state management, and UI.
+*   `camera_control.py`: Wrapper for `picamera2` handling hardware interactions.
+*   `marlin_control.py`: Handles G-code serial communication with the stepper board.
+*   `image_processing.py`: OpenCV logic for sprocket detection and image analysis.
 
-You can modify the provided `config.json` file to suit your needs. These are the available configurations:
+## 3D Print Files
+The `3d-Print-Files` folder contains FreeCAD (`.FCStd`) source files. You will need [FreeCAD](https://www.freecad.org/) to view these or export them as STL files for printing.
 
-```json
-{
-    "image_name": "frame_????????", // The name of the images to be processed
-    "input_path": "Capture", // The folder where the images are stored
-    "output_path": "Aligned", // The folder where the aligned images will be stored
-    "extensions": ["png", "jpg", "jpeg"], // The extensions of the images to be processed
-    "average_sample_count": 11, // This will be saved automatically if you run a new analysis
-    "average_width": 512, // This will be saved automatically if you run a new analysis
-    "average_height": 649, // This will be saved automatically if you run a new analysis
-    "average_area": 306419, // This will be saved automatically if you run a new analysis
-    "resize_image": [ // if you want to resize the images after alignment
-        3840, // width
-        2160 // height
-    ],
-    "frame_dims": [ // You can get this after adjusting the first frame dimensions
-        0, // x offset
-        -904, // y offset
-        3192, // width
-        2305 // height
-    ]
-}
-```
+## Troubleshooting
+*   **Serial Permission Error:** If you get a permission error accessing `/dev/ttyUSB0`, run `sudo usermod -a -G dialout $USER` and reboot.
+*   **Camera Errors:** Ensure the camera works outside the script by running `libcamera-hello` in a terminal.
+*   **Sprocket Detection Fails:** If the scanner keeps stopping, try adjusting the backlight brightness or use the `[` and `]` keys during the scan to adjust the detection threshold.
+*   **Constant Adjustments During Scan:** The scanning process should continue advancing the film with minimal adjustment. If you notice it frequently pausing for micro-adjustments, adjust the `FRAME_SPACING` setting to better work with your setup.
 
-## Step 3 - Denoise (optional)
-
-A post process called de-noise filtering can be used to improve image quality.  This code can be found in `Denoise.py`
-
-This is a significantly slow process, so a faster CPU helps a lot.  You can tweak the amount of correction made with these values
-
-```
-h=3, hColor=3, templateWindowSize=7,searchWindowSize=29
-```
-
-For a description of the paramters, check out the [OpenCV documentation](https://docs.opencv.org/3.4/d1/d79/group__photo__denoise.html#gaa501e71f52fb2dc17ff8ca5e7d2d3619).
-
-The files are put into a folder named "Denoise".  Example image.
-![Frame after denoise filtering](Sample_Images/After_DeNoise.png)
-
-## Step 4 - Create Video
-
-### FFMPEG
-You can use the open source FFMPEG tool to convert a series of pictures into a video, using a command similar to this:
-```
-ffmpeg.exe -y -start_number 0 -framerate 18 -i "Aligned\frame_%08d.png" -vcodec h264 -preset slower -tune grain -crf 15 -vf "fps=18,format=yuv420p" -r 18 film_output.mp4
-```
-
-### Video editor software
-Alternatively, use video editing software like [Davinci Resolve](https://www.blackmagicdesign.com/products/davinciresolve/) to import the pictures and generate a video.
-
-This can also be used to colour correct the film, remove noise and grain and generally improve the final video.
+## License
+This project is licensed under the GNU General Public License v3.0. See the `LICENSE` file for details.
