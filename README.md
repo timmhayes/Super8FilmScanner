@@ -129,7 +129,10 @@ The images captured will look like this (only higher resolution). Notice you can
 ![Full frame sample image](Sample_Images/Full_Frame_Sample.png)
 
 ## Step 2 - Alignment
-The alignment process is computationally intensive and runs much faster on a dedicated machine, particularly one with a dedicated GPU and NVMe drive. The code for doing this, which was once part of this repo, has been completely refactored and split off into a separate repo. 
+The alignment process is computationally intensive and runs much faster on a dedicated machine, particularly one with a dedicated GPU and NVMe drive. The code for doing this, which was once part of this repo, has been completely refactored and split off into a separate repo. Please see the following repo for alignment code:
+
+[8mm Film Frame Processor with YOLO Detection](https://github.com/timmhayes/8mm-film-frame-processor)
+
 
 **[Link TBD]**
 
